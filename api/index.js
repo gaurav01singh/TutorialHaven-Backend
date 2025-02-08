@@ -1,9 +1,9 @@
 import express from "express";
-import connectDB from "./config/db.js";
+import connectDB from "../config/db.js";
 import dotenv from "dotenv";
-import userRoutes from "./routes/userRoutes.js"; 
-import blogRoutes from "./routes/blogRoutes.js"; 
-import categoryRoutes from "./routes/categoryRoutes.js"
+import userRoutes from "../routes/userRoutes.js"; 
+import blogRoutes from "../routes/blogRoutes.js"; 
+import categoryRoutes from "../routes/categoryRoutes.js"
 import cors from "cors";
 
 
