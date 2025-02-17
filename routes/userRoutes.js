@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"; // For authentication token
 import userModel from "../models/userModel.js";
 import dotenv from "dotenv";
-import { authenticateToken } from "../middleware/authmiddleware.js";
+import { authenticateToken, isAdmin } from "../middleware/authmiddleware.js";
 import uploadImage from "../middleware/uploadImg.js";
 import multer from 'multer';
 
@@ -93,7 +93,7 @@ router.post("/login", async (req, res) => {
     }
 
     // Generate JWT Token
-    const token = jwt.sign({ id: user._id,username:user.username }, JWT_SECRET, {
+    const token = jwt.sign({ id: user._id,username:user.username,role:user.role }, JWT_SECRET, {
       expiresIn: "1h", // Token expires in 1 hour
     });
 
@@ -234,6 +234,7 @@ router.get("/:username", authenticateToken, async (req, res) => {
         profilePhoto:user.profilePhoto,
         images:user.images,
         bio:user.bio,
+        role:user.role,
         socialLinks: user.socialLinks,
       },
     });

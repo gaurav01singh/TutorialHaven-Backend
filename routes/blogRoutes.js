@@ -1,12 +1,12 @@
 import express from "express";
 import Blog from "../models/blogModel.js"; 
-import { authenticateToken } from "../middleware/authmiddleware.js";
+import { authenticateToken, isAdmin } from "../middleware/authmiddleware.js";
 import categoryModel from "../models/categoryModel.js";
 
 const router = express.Router();
 
 // Create a new blog
-router.post("/create",authenticateToken, async (req, res) => {
+router.post("/create",authenticateToken,isAdmin, async (req, res) => {
   try {
     const { title, description, category } = req.body;
 
@@ -32,7 +32,7 @@ router.post("/create",authenticateToken, async (req, res) => {
 });
 
 // Update a blog by ID
-router.put("/update/:id", authenticateToken, async (req, res) => {
+router.put("/update/:id", authenticateToken,isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const updatedBlog = await Blog.findByIdAndUpdate(id, req.body, { new: true });
@@ -44,7 +44,7 @@ router.put("/update/:id", authenticateToken, async (req, res) => {
 });
 
 // Delete a blog by ID
-router.delete("/delete/:id", authenticateToken, async (req, res) => {
+router.delete("/delete/:id", authenticateToken,isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const deletedBlog = await Blog.findByIdAndDelete(id);

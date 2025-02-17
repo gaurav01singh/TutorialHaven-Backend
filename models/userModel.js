@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema(
       default: "https://res.cloudinary.com/dyl5ibyvg/image/upload/v1738470373/cvs7bxhguhodci5vh02z.png", // Default profile photo URL
     },
     images: [{ type: String }], 
+    role: {
+      type: String,
+      enum: ["Admin", "User"],
+      default: "User",
+    },
   },
   {
     timestamps: true,
