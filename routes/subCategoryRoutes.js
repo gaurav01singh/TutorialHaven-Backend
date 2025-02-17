@@ -25,7 +25,18 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+router.get("/:id", async (req, res) => {
+  try {
+    const category = await Subcategory.findById(req.params.id);
+    
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+    res.status(200).json(category);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching category", error: error.message });
+  }
+});
 // Update Subcategory
 router.put("/update/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
