@@ -277,65 +277,37 @@ router.get("/auther/:id", async (req, res) => {
 
 router.post("/upload-image", authenticateToken, async (req, res) => {
   try {
-    const { image } = req.body; // Base64 encoded image or file URL
-    if (!image) {
-      return res.status(400).json({ message: "No image provided" });
+    const { images } = req.body; // Expecting an array of base64 images
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ message: "No images provided" });
     }
 
-    // Upload image to Cloudinary
-    const imageUrl = await uploadImage(image);
-
-    // Save image URL to the user's profile
-    const userId = req.user.id; // Get user ID from the token
+    const userId = req.user.id;
     const user = await userModel.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Add the new image URL to the user's images array
-    user.images.push(imageUrl);
+    // Upload each image to Cloudinary
+    const uploadedImageUrls = await Promise.all(images.map(uploadImage));
+
+    // Save uploaded images to user's profile
+    user.images.push(...uploadedImageUrls);
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: "Image uploaded successfully",
-      imageUrl,
+      message: "Images uploaded successfully",
+      images: uploadedImageUrls,
     });
   } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).json({ message: "Error uploading image", error: error.message });
+    console.error("Error uploading images:", error);
+    res.status(500).json({ message: "Error uploading images", error: error.message });
   }
 });
-/* -------------------- 🗑️ Delete Image -------------------- */
-router.delete("/delete-image/:imageUrl", authenticateToken, async (req, res) => {
-  try {
-    const { imageUrl } = req.params;
 
-    const user = await userModel.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Check if the imageUrl exists in the user's images array
-    const imageIndex = user.images.findIndex(image => image === imageUrl);
-    if (imageIndex === -1) {
-      return res.status(404).json({ message: "Image not found" });
-    }
-
-    // Delete the image from the user's images array
-    user.images.splice(imageIndex, 1);
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Image deleted successfully",
-    });
-  } catch (error) {
-    console.error("Error deleting image:", error);
-    res.status(500).json({ message: "Error deleting image", error: error.message });
-  }
-});
 
 
 export default router;
