@@ -307,7 +307,34 @@ router.post("/upload-image", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Error uploading images", error: error.message });
   }
 });
+router.delete("/delete-image/:imageUrl", authenticateToken, async (req, res) => {
+  try {
+    const { imageUrl } = req.params;
 
+    const user = await userModel.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if the imageUrl exists in the user's images array
+    const imageIndex = user.images.findIndex(image => image === imageUrl);
+    if (imageIndex === -1) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    // Delete the image from the user's images array
+    user.images.splice(imageIndex, 1);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Image deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    res.status(500).json({ message: "Error deleting image", error: error.message });
+  }
+});
 
 
 export default router;
