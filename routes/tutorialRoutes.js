@@ -8,12 +8,12 @@ const router = express.Router();
 // ✅ Create a new tutorial
 router.post("/create", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const { title, createdBy, category, subcategory, templateImg, sections } = req.body;
-    if (!title || !createdBy || !category) {
-      return res.status(400).json({ message: "Title, CreatedBy, and Category are required." });
+    const { title,  category, subcategory, templateImg, sections } = req.body;
+    if (!title  || !category) {
+      return res.status(400).json({ message: "Title, Category are required." });
     }
     const result = await uploadImage(templateImg);
-    const tutorial = new Tutorial({ title, createdBy, category, subcategory, templateImg: result, sections });
+    const tutorial = new Tutorial({ title, createdBy:req.user.id, category, subcategory, templateImg: result, sections });
     await tutorial.save();
     res.status(201).json(tutorial);
   } catch (error) {
@@ -46,6 +46,14 @@ router.get("/:id", async (req, res) => {
 router.get("/subcategory/:subcategoryId", async (req, res) => {
   try {
     const tutorials = await Tutorial.find({ subcategory: req.params.subcategoryId }).populate("category", "name");
+    res.json(tutorials);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+router.get("/category/:categoryId", async (req, res) => {
+  try {
+    const tutorials = await Tutorial.find({ category: req.params.categoryId });
     res.json(tutorials);
   } catch (error) {
     res.status(500).json({ error: error.message });
