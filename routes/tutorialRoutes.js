@@ -1,13 +1,19 @@
 import express from "express";
-import tutorialModel from "../models/tutorialModel.js";
+import Tutorial from "../models/tutorialModel.js";
 import { authenticateToken, isAdmin } from "../middleware/authmiddleware.js";
+import uploadImage from "../middleware/uploadImg.js";
 
 const router = express.Router();
 
-// ✅ Create a new tutorial with sub-sections
+// ✅ Create a new tutorial
 router.post("/create", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = new tutorialModel(req.body);
+    const { title, createdBy, category, subcategory, templateImg, sections } = req.body;
+    if (!title || !createdBy || !category) {
+      return res.status(400).json({ message: "Title, CreatedBy, and Category are required." });
+    }
+    const result = await uploadImage(templateImg);
+    const tutorial = new Tutorial({ title, createdBy, category, subcategory, templateImg: result, sections });
     await tutorial.save();
     res.status(201).json(tutorial);
   } catch (error) {
@@ -18,7 +24,7 @@ router.post("/create", authenticateToken, isAdmin, async (req, res) => {
 // ✅ Get all tutorials
 router.get("/all", async (req, res) => {
   try {
-    const tutorials = await tutorialModel.find();
+    const tutorials = await Tutorial.find().populate("createdBy", "name email").populate("category", "name");
     res.status(200).json(tutorials);
   } catch (error) {
     res.status(500).json({ message: "Error fetching tutorials", error: error.message });
@@ -26,9 +32,9 @@ router.get("/all", async (req, res) => {
 });
 
 // ✅ Get a single tutorial by ID
-router.get("/:id", authenticateToken, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const tutorial = await tutorialModel.findById(req.params.id);
+    const tutorial = await Tutorial.findById(req.params.id).populate("createdBy", "name email").populate("category", "name");
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.status(200).json(tutorial);
   } catch (error) {
@@ -39,17 +45,18 @@ router.get("/:id", authenticateToken, async (req, res) => {
 // ✅ Get tutorials by subcategory
 router.get("/subcategory/:subcategoryId", async (req, res) => {
   try {
-    const tutorials = await tutorialModel.find({ subcategory: req.params.subcategoryId });
+    const tutorials = await Tutorial.find({ subcategory: req.params.subcategoryId }).populate("category", "name");
     res.json(tutorials);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// ✅ Update a tutorial (including sections & sub-sections)
+// ✅ Update a tutorial
 router.put("/update/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = await tutorialModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const tutorial = await Tutorial.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.json(tutorial);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -59,18 +66,21 @@ router.put("/update/:id", authenticateToken, isAdmin, async (req, res) => {
 // ✅ Delete a tutorial
 router.delete("/delete/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
-    await tutorialModel.findByIdAndDelete(req.params.id);
-    res.json({ message: "Tutorial deleted" });
+    const tutorial = await Tutorial.findByIdAndDelete(req.params.id);
+    if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
+    res.json({ message: "Tutorial deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// ✅ Add a new section to an existing tutorial
+// ✅ Add a new section
 router.put("/:id/add-section", authenticateToken, isAdmin, async (req, res) => {
   try {
     const { title, content } = req.body;
-    const tutorial = await tutorialModel.findById(req.params.id);
+    if (!title || !content) return res.status(400).json({ message: "Title and Content are required." });
+
+    const tutorial = await Tutorial.findById(req.params.id);
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
 
     tutorial.sections.push({ title, content, subSections: [] });
@@ -81,20 +91,22 @@ router.put("/:id/add-section", authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
-// ✅ Add a sub-section to an existing section
+// ✅ Add a sub-section
 router.put("/:tutorialId/section/:sectionIndex/add-subsection", authenticateToken, isAdmin, async (req, res) => {
   try {
     const { title, content } = req.body;
-    const tutorial = await tutorialModel.findById(req.params.tutorialId);
+    if (!title || !content) return res.status(400).json({ message: "Title and Content are required." });
+
+    const tutorial = await Tutorial.findById(req.params.tutorialId);
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
 
-    if (tutorial.sections[req.params.sectionIndex]) {
-      tutorial.sections[req.params.sectionIndex].subSections.push({ title, content });
-      await tutorial.save();
-      res.json(tutorial);
-    } else {
-      res.status(404).json({ message: "Section not found" });
+    if (!tutorial.sections[req.params.sectionIndex]) {
+      return res.status(404).json({ message: "Section not found" });
     }
+
+    tutorial.sections[req.params.sectionIndex].subSections.push({ title, content });
+    await tutorial.save();
+    res.json(tutorial);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -103,8 +115,12 @@ router.put("/:tutorialId/section/:sectionIndex/add-subsection", authenticateToke
 // ✅ Delete a specific section
 router.put("/:tutorialId/section/:sectionIndex/delete", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = await tutorialModel.findById(req.params.tutorialId);
+    const tutorial = await Tutorial.findById(req.params.tutorialId);
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
+
+    if (!tutorial.sections[req.params.sectionIndex]) {
+      return res.status(404).json({ message: "Section not found" });
+    }
 
     tutorial.sections.splice(req.params.sectionIndex, 1);
     await tutorial.save();
@@ -117,16 +133,16 @@ router.put("/:tutorialId/section/:sectionIndex/delete", authenticateToken, isAdm
 // ✅ Delete a specific sub-section
 router.put("/:tutorialId/section/:sectionIndex/subsection/:subSectionIndex/delete", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = await tutorialModel.findById(req.params.tutorialId);
+    const tutorial = await Tutorial.findById(req.params.tutorialId);
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
 
-    if (tutorial.sections[req.params.sectionIndex]?.subSections[req.params.subSectionIndex]) {
-      tutorial.sections[req.params.sectionIndex].subSections.splice(req.params.subSectionIndex, 1);
-      await tutorial.save();
-      res.json(tutorial);
-    } else {
-      res.status(404).json({ message: "Sub-section not found" });
+    if (!tutorial.sections[req.params.sectionIndex]?.subSections[req.params.subSectionIndex]) {
+      return res.status(404).json({ message: "Sub-section not found" });
     }
+
+    tutorial.sections[req.params.sectionIndex].subSections.splice(req.params.subSectionIndex, 1);
+    await tutorial.save();
+    res.json(tutorial);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

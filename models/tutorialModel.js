@@ -14,7 +14,13 @@ const sectionSchema = new mongoose.Schema({
 const tutorialSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     subcategory: { type: mongoose.Schema.Types.ObjectId, ref: "Subcategory" },
+    templateImg: {
+      type: String,
+      default: "https://res.cloudinary.com/dyl5ibyvg/image/upload/v1740068312/vtcnrrvoifqpwtzdhco5.png",
+    },
     sections: [sectionSchema], // Array of sections with sub-sections
   },
   { timestamps: true }
