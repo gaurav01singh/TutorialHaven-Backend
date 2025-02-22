@@ -34,7 +34,7 @@ router.get("/all", async (req, res) => {
 // ✅ Get a single tutorial by ID
 router.get("/:id", async (req, res) => {
   try {
-    const tutorial = await Tutorial.findById(req.params.id).populate("createdBy", "name email").populate("category", "name");
+    const tutorial = await Tutorial.findById(req.params.id).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.status(200).json(tutorial);
   } catch (error) {
