@@ -56,7 +56,7 @@ router.delete("/delete/:id", authenticateToken,isAdmin, async (req, res) => {
 });
 
 // Get all blogs
-router.get("/all", authenticateToken, async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
     const blogs = await Blog.find();
     res.status(200).json(blogs);
@@ -66,7 +66,7 @@ router.get("/all", authenticateToken, async (req, res) => {
 });
 
 // Get a blog by ID
-router.get("/:id", authenticateToken, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const blog = await Blog.findById(id);
@@ -76,7 +76,7 @@ router.get("/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Error fetching blog", error: error.message });
   }
 });
-router.get("/user/:userId", authenticateToken, async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
     const blogs = await Blog.find({ createdBy: req.params.userId });
     if (!blogs) {
