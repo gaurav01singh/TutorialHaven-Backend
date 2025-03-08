@@ -32,9 +32,9 @@ router.get("/all", async (req, res) => {
 });
 
 // ✅ Get a single tutorial by ID
-router.get("/:id", async (req, res) => {
+router.get("/:title", async (req, res) => {
   try {
-    const tutorial = await Tutorial.findById(req.params.id).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
+    const tutorial = await Tutorial.findOne({title:req.params.title}).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.status(200).json(tutorial);
   } catch (error) {
@@ -61,9 +61,9 @@ router.get("/category/:categoryId", async (req, res) => {
 });
 
 // ✅ Update a tutorial
-router.put("/update/:id", authenticateToken, isAdmin, async (req, res) => {
+router.put("/update/:title", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = await Tutorial.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const tutorial = await Tutorial.findByIdAndUpdate({title:req.params.title}, req.body, { new: true });
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.json(tutorial);
   } catch (error) {

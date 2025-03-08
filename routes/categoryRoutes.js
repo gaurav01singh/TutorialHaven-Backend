@@ -54,9 +54,9 @@ router.get("/get-category", async (req, res) => {
 });
 
 // 🔵 Get a single category by ID
-router.get("/:id", async (req, res) => {
+router.get("/:name", async (req, res) => {
   try {
-    const category = await categoryModel.findById(req.params.id);
+    const category = await categoryModel.findOne({name :req.params.name});
     
     if (!category) {
       return res.status(404).json({ message: "Category not found." });

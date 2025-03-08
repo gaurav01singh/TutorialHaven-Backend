@@ -25,9 +25,9 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-router.get("/:id", async (req, res) => {
+router.get("/:name", async (req, res) => {
   try {
-    const category = await Subcategory.findById(req.params.id);
+    const category = await Subcategory.findOne({name :req.params.name});
     
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
