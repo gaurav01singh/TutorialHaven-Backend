@@ -63,7 +63,7 @@ router.get("/category/:categoryId", async (req, res) => {
 // ✅ Update a tutorial
 router.put("/update/:title", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = await Tutorial.findByIdAndUpdate({title:req.params.title}, req.body, { new: true });
+    const tutorial = await Tutorial.findOneAndUpdate({ title: decodeURIComponent(req.params.title) }, req.body, { new: true });
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.json(tutorial);
   } catch (error) {
