@@ -13,7 +13,7 @@ router.post("/create", authenticateToken, isAdmin, async (req, res) => {
       return res.status(400).json({ message: "Title, Category are required." });
     }
     const result = await uploadImage(templateImg);
-    const tutorial = new Tutorial({ title, createdBy:req.user.id, category, subcategory, templateImg: result, sections });
+    const tutorial = new Tutorial({ title, createdBy:req.user.id, category, subcategory, templateImg: result, sections, slug: title.toLowerCase().replace(/ /g, "-") });
     await tutorial.save();
     res.status(201).json(tutorial);
   } catch (error) {
@@ -32,9 +32,9 @@ router.get("/all", async (req, res) => {
 });
 
 // ✅ Get a single tutorial by ID
-router.get("/:title", async (req, res) => {
+router.get("/:slug", async (req, res) => {
   try {
-    const tutorial = await Tutorial.findOne({title:req.params.title}).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
+    const tutorial = await Tutorial.findOne({slug:req.params.slug}).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.status(200).json(tutorial);
   } catch (error) {
@@ -61,9 +61,9 @@ router.get("/category/:categoryId", async (req, res) => {
 });
 
 // ✅ Update a tutorial
-router.put("/update/:title", authenticateToken, isAdmin, async (req, res) => {
+router.put("/update/:slug", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const tutorial = await Tutorial.findOneAndUpdate({ title: decodeURIComponent(req.params.title) }, req.body, { new: true });
+    const tutorial = await Tutorial.findOneAndUpdate({ slug: decodeURIComponent(req.params.slug) }, req.body, { new: true });
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.json(tutorial);
   } catch (error) {

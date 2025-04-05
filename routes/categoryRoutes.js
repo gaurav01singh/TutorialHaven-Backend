@@ -20,7 +20,7 @@ router.post("/create-category", authenticateToken,isAdmin, async (req, res) => {
       return res.status(400).json({ message: "Category already exists." });
     }
 
-    const newCategory = new categoryModel({ name: name.trim() });
+    const newCategory = new categoryModel({ name: name.trim(),slug: name.trim().toLowerCase().replace(/ /g, "-") });
     await newCategory.save();
 
     res.status(201).json({
@@ -54,9 +54,9 @@ router.get("/get-category", async (req, res) => {
 });
 
 // 🔵 Get a single category by ID
-router.get("/:name", async (req, res) => {
+router.get("/:slug", async (req, res) => {
   try {
-    const category = await categoryModel.findOne({name :req.params.name});
+    const category = await categoryModel.findOne({slug :req.params.slug});
     
     if (!category) {
       return res.status(404).json({ message: "Category not found." });

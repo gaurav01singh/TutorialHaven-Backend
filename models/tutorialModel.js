@@ -14,6 +14,7 @@ const sectionSchema = new mongoose.Schema({
 const tutorialSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
+    slug: { type: String, required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     subcategory: { type: mongoose.Schema.Types.ObjectId, ref: "Subcategory" },

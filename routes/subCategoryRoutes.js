@@ -8,7 +8,15 @@ const router = express.Router();
 // Create Subcategory
 router.post("/create", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const subcategory = new Subcategory(req.body);
+    const { name, category } = req.body;
+    if (!name || !category) {
+      return res.status(400).json({ message: "Name and category are required." });
+    }
+    const subcategory = new Subcategory({
+      name,
+      slug: name.toLowerCase().replace(/ /g, "-"),
+      category,
+    });
     await subcategory.save();
     res.status(201).json(subcategory);
   } catch (error) {
@@ -25,9 +33,9 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-router.get("/:name", async (req, res) => {
+router.get("/:slug", async (req, res) => {
   try {
-    const category = await Subcategory.findOne({name :req.params.name});
+    const category = await Subcategory.findOne({slug: req.params.slug}).populate("category").lean();
     
     if (!category) {
       return res.status(404).json({ message: "Category not found." });

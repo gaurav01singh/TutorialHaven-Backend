@@ -18,6 +18,7 @@ router.post("/create",authenticateToken,isAdmin, async (req, res) => {
 
     const newBlog = new Blog({
       title,
+      slug: title.toLowerCase().replace(/ /g, "-"),
       description,
       createdBy:req.user.id,
       categories:category, // An array of category IDs
