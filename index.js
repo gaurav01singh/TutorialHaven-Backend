@@ -18,7 +18,7 @@ connectDB();
 
 const app = express();
 app.use(
-  cors({origin:"https://tutorial-haven-backend.vercel.app", credentials:true})
+  cors({origin:"https://tutorial-haven-theta.vercel.app", credentials:true})
 );
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
