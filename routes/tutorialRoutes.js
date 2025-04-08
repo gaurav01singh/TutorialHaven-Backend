@@ -24,7 +24,7 @@ router.post("/create", authenticateToken, isAdmin, async (req, res) => {
 // ✅ Get all tutorials
 router.get("/all", async (req, res) => {
   try {
-    const tutorials = await Tutorial.find({},'title templateImg createdBy category').populate("createdBy", "name email").populate("category", "name");
+    const tutorials = await Tutorial.find({},'title templateImg slug createdBy category').populate("createdBy", "name email").populate("category", "name");
     res.status(200).json(tutorials);
   } catch (error) {
     res.status(500).json({ message: "Error fetching tutorials", error: error.message });
@@ -45,7 +45,7 @@ router.get("/:slug", async (req, res) => {
 // ✅ Get tutorials by subcategory
 router.get("/subcategory/:subcategoryId", async (req, res) => {
   try {
-    const tutorials = await Tutorial.find({ subcategory: req.params.subcategoryId },'title templateImg createdBy category').populate("category", "name");
+    const tutorials = await Tutorial.find({ subcategory: req.params.subcategoryId },'title templateImg slug createdBy category').populate("category", "name");
     res.json(tutorials);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -53,7 +53,7 @@ router.get("/subcategory/:subcategoryId", async (req, res) => {
 });
 router.get("/category/:categoryId", async (req, res) => {
   try {
-    const tutorials = await Tutorial.find({ category: req.params.categoryId },'title templateImg createdBy category');
+    const tutorials = await Tutorial.find({ category: req.params.categoryId },'title templateImg slug createdBy category');
     res.json(tutorials);
   } catch (error) {
     res.status(500).json({ error: error.message });
