@@ -13,7 +13,7 @@ router.post("/create", authenticateToken, isAdmin, async (req, res) => {
       return res.status(400).json({ message: "Title, Category are required." });
     }
     const result = await uploadImage(templateImg);
-    const tutorial = new Tutorial({ title, createdBy:req.user.id, category, subcategory, templateImg: result, sections, slug: title.toLowerCase().replace(/ /g, "-") });
+    const tutorial = new Tutorial({ title, createdBy:req.user.id, category, subcategory, templateImg: result, sections, slug: title.toLowerCase().replace(/ /g, "-"),createdAt: new Date() });
     await tutorial.save();
     res.status(201).json(tutorial);
   } catch (error) {
@@ -24,9 +24,36 @@ router.post("/create", authenticateToken, isAdmin, async (req, res) => {
 // ✅ Get all tutorials
 router.get("/all", async (req, res) => {
   try {
-    const tutorials = await Tutorial.find({},'title templateImg slug createdBy category').populate("createdBy", "name email").populate("category", "name");
-    res.status(200).json(tutorials);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    res.set('Cache-Control', 'public, max-age=300');
+    
+    // Get total count for pagination info
+    const totalCount = await Tutorial.countDocuments({});
+    
+    const tutorials = await Tutorial.find({}, 'title templateImg slug createdBy category createdAt')
+      .populate("createdBy", "username email")
+      .populate("category", "name")
+      .lean()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+    
+    res.status(200).json({
+      tutorials,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPrevPage: page > 1
+      }
+    });
   } catch (error) {
+    console.error("Error fetching tutorials:", error);
     res.status(500).json({ message: "Error fetching tutorials", error: error.message });
   }
 });
