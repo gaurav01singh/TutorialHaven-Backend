@@ -8,12 +8,12 @@ const router = express.Router();
 // ✅ Create a new tutorial
 router.post("/create", authenticateToken, isAdmin, async (req, res) => {
   try {
-    const { title,  category, subcategory, templateImg, sections } = req.body;
-    if (!title  || !category) {
+    const { title, category, subcategory, templateImg, sections } = req.body;
+    if (!title || !category) {
       return res.status(400).json({ message: "Title, Category are required." });
     }
     const result = await uploadImage(templateImg);
-    const tutorial = new Tutorial({ title, createdBy:req.user.id, category, subcategory, templateImg: result, sections, slug: title.toLowerCase().replace(/ /g, "-"),createdAt: new Date() });
+    const tutorial = new Tutorial({ title, createdBy: req.user.id, category, subcategory, templateImg: result, sections, slug: title.toLowerCase().replace(/ /g, "-"), createdAt: new Date() });
     await tutorial.save();
     res.status(201).json(tutorial);
   } catch (error) {
@@ -27,12 +27,12 @@ router.get("/all", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
-    
+
     res.set('Cache-Control', 'public, max-age=300');
-    
+
     // Get total count for pagination info
     const totalCount = await Tutorial.countDocuments({});
-    
+
     const tutorials = await Tutorial.find({}, 'title templateImg slug createdBy category createdAt')
       .populate("createdBy", "username email")
       .populate("category", "name")
@@ -41,7 +41,7 @@ router.get("/all", async (req, res) => {
       .skip(skip)
       .limit(limit)
       .exec();
-    
+
     res.status(200).json({
       tutorials,
       pagination: {
@@ -58,7 +58,7 @@ router.get("/all", async (req, res) => {
   }
 });
 
-router.get("/:userId", async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -68,8 +68,8 @@ router.get("/:userId", async (req, res) => {
     // Set cache headers
     res.set('Cache-Control', 'public, max-age=300');
 
-    // Build query - if you need to filter by userId, add it here
-    const query = {}; // Add { createdBy: userId } if filtering by user
+    // Filter by userId
+    const query = userId ? { createdBy: userId } : {};
 
     // Execute queries in parallel for better performance
     const [tutorials, totalCount] = await Promise.all([
@@ -118,7 +118,8 @@ router.get("/:userId", async (req, res) => {
 // ✅ Get a single tutorial by ID
 router.get("/:slug", async (req, res) => {
   try {
-    const tutorial = await Tutorial.findOne({slug:req.params.slug}).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
+    const tutorial = await Tutorial.findOne({ slug: req.params.slug }).populate("createdBy", "name email").populate("category", "name").populate("subcategory", "name");
+    // console.log(tutorial);
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
     res.status(200).json(tutorial);
   } catch (error) {
@@ -129,7 +130,7 @@ router.get("/:slug", async (req, res) => {
 // ✅ Get tutorials by subcategory
 router.get("/subcategory/:subcategoryId", async (req, res) => {
   try {
-    const tutorials = await Tutorial.find({ subcategory: req.params.subcategoryId },'title templateImg slug createdBy category').populate("category", "name");
+    const tutorials = await Tutorial.find({ subcategory: req.params.subcategoryId }, 'title templateImg slug createdBy category').populate("category", "name");
     res.json(tutorials);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -137,7 +138,7 @@ router.get("/subcategory/:subcategoryId", async (req, res) => {
 });
 router.get("/category/:categoryId", async (req, res) => {
   try {
-    const tutorials = await Tutorial.find({ category: req.params.categoryId },'title templateImg slug createdBy category');
+    const tutorials = await Tutorial.find({ category: req.params.categoryId }, 'title templateImg slug createdBy category');
     res.json(tutorials);
   } catch (error) {
     res.status(500).json({ error: error.message });
