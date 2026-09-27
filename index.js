@@ -24,6 +24,19 @@ app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true, parameterLimit: 100000 }));
 
+// Middleware to ensure database is connected before handling API requests
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({
+      error: "Database connection failed",
+      message: err.message,
+    });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("hello from Vercel!");
 });
