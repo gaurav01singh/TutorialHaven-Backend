@@ -58,6 +58,63 @@ router.get("/all", async (req, res) => {
   }
 });
 
+router.get("/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20)); // Cap at 100
+    const skip = (page - 1) * limit;
+
+    // Set cache headers
+    res.set('Cache-Control', 'public, max-age=300');
+
+    // Build query - if you need to filter by userId, add it here
+    const query = {}; // Add { createdBy: userId } if filtering by user
+
+    // Execute queries in parallel for better performance
+    const [tutorials, totalCount] = await Promise.all([
+      Tutorial.find(query, 'title templateImg slug createdBy category createdAt')
+        .populate("createdBy", "username email")
+        .populate("category", "name")
+        .lean()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      Tutorial.countDocuments(query)
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // Return structured response
+    res.status(200).json({
+      success: true,
+      data: tutorials,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalCount,
+        itemsPerPage: limit,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching tutorials:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch tutorials',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
 // ✅ Get a single tutorial by ID
 router.get("/:slug", async (req, res) => {
   try {
