@@ -24,6 +24,12 @@ const connectDB = async () => {
   }
 
   const maskedUri = mongoUri.replace(/:\/\/([^:]+):([^@]+)@/, "://$1:****@");
+  try {
+    const parsed = new URL(mongoUri);
+    console.log(`[DB Config] User: "${parsed.username}", Password length: ${parsed.password.length}, DB: "${parsed.pathname.slice(1)}"`);
+  } catch (e) {
+    // Ignore URL parse error
+  }
 
   if (!connectionPromise) {
     connectionPromise = mongoose.connect(mongoUri, {

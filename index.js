@@ -35,6 +35,22 @@ app.get("/", (req, res) => {
   res.send("hello from Vercel!");
 });
 
+// Database health check endpoint
+app.get("/api/db-check", async (req, res) => {
+  try {
+    await connectDB();
+    res.json({
+      status: "connected",
+      message: "Database connection successful",
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
 // API routes
 app.use("/api/user", userRoutes);
 app.use("/api/blog", blogRoutes);
