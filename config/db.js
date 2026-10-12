@@ -1,24 +1,36 @@
 import mongoose from "mongoose";
 import dns from "node:dns";
 
-// Use public DNS to prevent querySrv ECONNREFUSED on local network DNS
+// Use public DNS when the system resolver cannot resolve MongoDB SRV records.
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
-let cachedConnection = null;
+let connectionPromise = null;
 
 const connectDB = async () => {
-  if (cachedConnection && mongoose.connection.readyState >= 1) {
-    return cachedConnection;
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
 
-  try {
-    cachedConnection = await mongoose.connect(process.env.MONGO_URL);
-    console.log(`connected ${cachedConnection.connection.host}`);
-    return cachedConnection;
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    throw error;
+  if (!process.env.MONGO_URL) {
+    throw new Error("MONGO_URL environment variable is not configured");
   }
+
+  if (!connectionPromise) {
+    connectionPromise = mongoose.connect(process.env.MONGO_URL, {
+      serverSelectionTimeoutMS: 8000,
+    })
+      .then((connection) => {
+        console.log(`connected ${connection.connection.host}`);
+        return connection;
+      })
+      .catch((error) => {
+        connectionPromise = null;
+        console.error("MongoDB connection error:", error);
+        throw error;
+      });
+  }
+
+  return connectionPromise;
 };
 
 export default connectDB;
