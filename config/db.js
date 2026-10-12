@@ -11,21 +11,31 @@ const connectDB = async () => {
     return mongoose.connection;
   }
 
-  if (!process.env.MONGO_URL) {
+  let mongoUri = (process.env.MONGO_URL || "").trim();
+  if (
+    (mongoUri.startsWith('"') && mongoUri.endsWith('"')) ||
+    (mongoUri.startsWith("'") && mongoUri.endsWith("'"))
+  ) {
+    mongoUri = mongoUri.slice(1, -1).trim();
+  }
+
+  if (!mongoUri) {
     throw new Error("MONGO_URL environment variable is not configured");
   }
 
+  const maskedUri = mongoUri.replace(/:\/\/([^:]+):([^@]+)@/, "://$1:****@");
+
   if (!connectionPromise) {
-    connectionPromise = mongoose.connect(process.env.MONGO_URL, {
+    connectionPromise = mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 8000,
     })
       .then((connection) => {
-        console.log(`connected ${connection.connection.host}`);
+        console.log(`Connected to MongoDB host: ${connection.connection.host}`);
         return connection;
       })
       .catch((error) => {
         connectionPromise = null;
-        console.error("MongoDB connection error:", error);
+        console.error(`MongoDB connection error for ${maskedUri}:`, error.message);
         throw error;
       });
   }
